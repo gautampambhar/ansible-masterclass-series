@@ -1,0 +1,51 @@
+---
+# Update All Host  
+ - hosts: all # below task we want to execute on all our servers; web,db,file servers
+   become: true # Will be making changes to system
+   pre_tasks: # This task always runs first because it's "pre_task"
+ 
+   - name: install updates (CentOS) # This is one play. you can have many as you need
+     tags: always # I want to run this always and want to patch always 
+     dnf: # This is module used for CentOS. Do google to know it's properties
+       update_only: yes # Update packages with dnf module
+       update_cache: yes
+     when: ansible_distribution == "CentOS"
+ 
+   - name: install updates (Ubuntu) # This is second play
+     tags: always
+     apt:
+       upgrade: dist # Update packages with apt module
+       update_cache: yes
+     when: ansible_distribution == "Ubuntu"
+
+# Create Users on all server
+ - hosts: all
+   become: true
+   tasks:
+  
+  # Create User
+   - name: create simone user
+     tags: always
+     user:
+       name: simone
+       groups: root
+
+  # Create SSH key for user
+   - name: add ssh key for simone
+     tags: always
+     authorized_key:
+     # ansible.posix.authorized_key:
+       user: simone
+       # This key allow admins who has this key to be able to login as simon without passphrase 
+       key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAe7/ofWLNBq3+fRn3UmgAizdicLs9vcS4Oj8VSOD1S/ ansible"
+       # key: "{{ lookup('file', '/home/charlie/.ssh/id_rsa.pub') }}"
+
+  # Add sudoers file for simon: Use Copy module 
+   - name: add sudoers file for simone
+     tags: always
+     copy:
+       src: sudoer_simone
+       dest: /etc/sudoers.d/simone
+       owner: root
+       group: root
+       mode: 0440

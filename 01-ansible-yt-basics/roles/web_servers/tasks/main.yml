@@ -1,0 +1,56 @@
+# install apache and php
+- name: install apache and php for Ubuntu servers
+  tags: apache,apache2,ubuntu 
+  apt:
+    name:
+      - "{{ apache_package_name }}"
+      - "{{ php_package_name }}"
+    state: latest
+  when: ansible_distribution == "Ubuntu"
+
+- name: install apache and php for CentOS servers
+  tags: apache,centos,httpd
+  dnf:
+    name:
+      - "{{ apache_package_name }}"
+      - "{{ php_package_name }}"
+    state: latest
+  when: ansible_distribution == "CentOS"
+
+# Start Apache service after it's installtion on CentOS
+# When you install Apache on CentOS servers that includes a service, it most often won’t be started automatically, they leave that up to you so you wanna make sure that Apache is running after we install it 
+- name: start and enable httpd (CentOS)
+  tags: apache,centos,httpd
+  service: # Use service module when you want to automatically start the apache server after it's installtion on CentOS 
+    name: "{{ apache_service }}"
+    state: started
+    enabled: yes # If the server gets rebooted, then the service will not start. So Apache Will not be running
+  when: ansible_distribution == "CentOS"
+
+# Change file content in order for Ansible to restart the service
+- name: change e-mail address for admin
+  tags: apache,centos,httpd
+  lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^ServerAdmin' # Tells to find line that starts with ServerAdmin
+    line: ServerAdmin somebody@somewhere.net # Tells to replace the line(above) with ServerAdmin somebody@somewhere.net
+  when: ansible_distribution == "CentOS"
+  #register: httpd # register its state in a variable named "httpd" # name can be anything
+  notify: restart_apache
+
+- name: restart httpd (CentOS)
+  tags: apache,centos,httpd
+  service:
+    name: "{{ apache_service }}"
+    state: restarted
+  when: httpd.changed # only restart the service if the variable "httpd" state is changed 
+
+# copy html file for site
+- name: copy html file for site
+  tags: apache,apache,apache2,httpd
+  copy:
+    src: default_site.html
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: 0644

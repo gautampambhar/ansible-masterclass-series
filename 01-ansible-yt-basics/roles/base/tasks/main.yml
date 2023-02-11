@@ -1,0 +1,14 @@
+# Create SSH key for user
+- name: add ssh key for simone
+  tags: always
+  authorized_key:
+  # ansible.posix.authorized_key:
+    user: simone
+    # This key allow admins who has this key to be able to login as simon without passphrase 
+    key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAe7/ofWLNBq3+fRn3UmgAizdicLs9vcS4Oj8VSOD1S/ ansible"
+    # key: "{{ lookup('file', '/home/charlie/.ssh/id_rsa.pub') }}"
+
+## What is this key for? ##
+# This play is going to be run as a part of the bootstrap as well. so anytime this site.yml playbook is run, this requirement is already met. 
+# But we consider this kind of like a placeholder because you can use state absent to remove this key if it ever gets compromised 
+# so for example, you can add a new authorized key if you have a problem with the original one(if it leaks). so you can have a play to add a new key to all your servers and then you can add that another play above existing play and set the existing play to state absent to remove this key from the servers or even just change the key if you would like that’s why we left this play here because this is just a place folder. If you want to do key management later, you can do it.
